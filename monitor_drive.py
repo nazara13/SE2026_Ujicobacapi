@@ -20,25 +20,37 @@ SCOPES = [
 ]
 
 def get_services():
-    """Mengelola autentikasi Google Drive & Sheets API (Mendukung Local & Streamlit Cloud)."""
+    """Mengelola autentikasi Google Drive & Sheets API (Mendukung Local, Streamlit Cloud, & GitHub Actions)."""
     creds = None
     
-    # Coba baca dari Streamlit Secrets (Untuk Hosting Cloud)
-    try:
-        import streamlit as st
-        if "google" in st.secrets:
+    # 1. Coba baca dari GitHub Actions (Environment Variables)
+    env_token = os.environ.get('TOKEN_JSON')
+    if env_token:
+        try:
             from google.oauth2.credentials import Credentials as GCoords
             import json
-            creds_info = json.loads(st.secrets["google"]["token"])
+            creds_info = json.loads(env_token)
             creds = GCoords.from_authorized_user_info(creds_info, SCOPES)
-            
-            # Jika token expired tapi ada refresh token di secrets
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
-    except:
-        pass
+        except Exception as e:
+            print(f"[DEBUG] Gagal baca token dari env: {e}")
 
-    # Jika bukan di cloud, cek file lokal
+    # 2. Coba baca dari Streamlit Secrets (Jika di Hosting Streamlit)
+    if not creds:
+        try:
+            import streamlit as st
+            if "google" in st.secrets:
+                from google.oauth2.credentials import Credentials as GCoords
+                import json
+                creds_info = json.loads(st.secrets["google"]["token"])
+                creds = GCoords.from_authorized_user_info(creds_info, SCOPES)
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(Request())
+        except:
+            pass
+
+    # 3. Jika bukan di cloud, cek file lokal
     if not creds:
         if os.path.exists('token.json'):
             creds = Credentials.from_authorized_user_file('token.json', SCOPES)
