@@ -159,40 +159,44 @@ def update_gsheet_rekap(sheets_service, spreadsheet_id, sheets_info, today_str, 
 
 def update_local_excel(today_str, today_files):
     """Tetap simpan backup di Excel Local dengan rumus Link (menggunakan ';' untuk locale Indonesia)."""
-    link_formula = f'=HYPERLINK("#\'{today_str}\'!A1"; "Lihat Detail")'
-    
-    if not os.path.exists(EXCEL_FILE):
-        with pd.ExcelWriter(EXCEL_FILE, engine='openpyxl') as writer:
-            df_rekap = pd.DataFrame([{'Tanggal': today_str, 'Laporan': len(today_files), 'Detail': link_formula}])
-            df_rekap.to_excel(writer, sheet_name='REKAP TOTAL', index=False)
-            if today_files: pd.DataFrame(today_files).to_excel(writer, sheet_name=today_str, index=False)
-    else:
-        with pd.ExcelWriter(EXCEL_FILE, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-            if today_files: pd.DataFrame(today_files).to_excel(writer, sheet_name=today_str, index=False)
-            
-            try:
-                df_rekap = pd.read_excel(EXCEL_FILE, sheet_name='REKAP TOTAL')
-                # Pastikan kolom Detail bisa menerima string/objek (menghindari warning pandas)
-                df_rekap['Detail'] = df_rekap['Detail'].astype(object)
-            except:
-                df_rekap = pd.DataFrame(columns=['Tanggal', 'Laporan', 'Detail'])
-            
-            if today_str in df_rekap['Tanggal'].astype(str).values:
-                df_rekap.loc[df_rekap['Tanggal'].astype(str) == today_str, 'Laporan'] = len(today_files)
-                df_rekap.loc[df_rekap['Tanggal'].astype(str) == today_str, 'Detail'] = link_formula
-            else:
-                new_row = pd.DataFrame([{'Tanggal': today_str, 'Laporan': len(today_files), 'Detail': link_formula}])
-                df_rekap = pd.concat([df_rekap, new_row], ignore_index=True)
-            
-            df_rekap.to_excel(writer, sheet_name='REKAP TOTAL', index=False)
+    try:
+        link_formula = f'=HYPERLINK("#\'{today_str}\'!A1"; "Lihat Detail")'
+        
+        if not os.path.exists(EXCEL_FILE):
+            with pd.ExcelWriter(EXCEL_FILE, engine='openpyxl') as writer:
+                df_rekap = pd.DataFrame([{'Tanggal': today_str, 'Laporan': len(today_files), 'Detail': link_formula}])
+                df_rekap.to_excel(writer, sheet_name='REKAP TOTAL', index=False)
+                if today_files: pd.DataFrame(today_files).to_excel(writer, sheet_name=today_str, index=False)
+        else:
+            with pd.ExcelWriter(EXCEL_FILE, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                if today_files: pd.DataFrame(today_files).to_excel(writer, sheet_name=today_str, index=False)
+                
+                try:
+                    df_rekap = pd.read_excel(EXCEL_FILE, sheet_name='REKAP TOTAL')
+                    # Pastikan kolom Detail bisa menerima string/objek (menghindari warning pandas)
+                    df_rekap['Detail'] = df_rekap['Detail'].astype(object)
+                except:
+                    df_rekap = pd.DataFrame(columns=['Tanggal', 'Laporan', 'Detail'])
+                
+                if today_str in df_rekap['Tanggal'].astype(str).values:
+                    df_rekap.loc[df_rekap['Tanggal'].astype(str) == today_str, 'Laporan'] = len(today_files)
+                    df_rekap.loc[df_rekap['Tanggal'].astype(str) == today_str, 'Detail'] = link_formula
+                else:
+                    new_row = pd.DataFrame([{'Tanggal': today_str, 'Laporan': len(today_files), 'Detail': link_formula}])
+                    df_rekap = pd.concat([df_rekap, new_row], ignore_index=True)
+                
+                df_rekap.to_excel(writer, sheet_name='REKAP TOTAL', index=False)
+    except Exception as e:
+        print(f"[!] Gagal update Excel Lokal (Mungkin sedang dibuka atau di Cloud): {e}")
 
 def main():
     print("="*50); print("🚀 DRIVE + SHEETS DAILY SNAPSHOT STARTING..."); print("="*50)
     drive_service, sheets_service = get_services()
     if not drive_service: return
 
-    # Tanggal hari ini sebagai nama tab/rekaman
-    today_str = datetime.datetime.now().strftime('%Y-%m-%d')
+    # Paksa gunakan waktu WIB (UTC+7)
+    now_wib = datetime.datetime.utcnow() + datetime.timedelta(hours=7)
+    today_str = now_wib.strftime('%Y-%m-%d')
     print(f"[*] Menarik SELURUH isi folder untuk Snapshot {today_str}...")
     
     query = f"'{FOLDER_ID}' in parents and trashed = false"

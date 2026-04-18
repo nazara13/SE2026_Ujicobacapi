@@ -58,11 +58,15 @@ def load_data_from_gsheets():
         
         raw_items = results_files.get('files', [])
         all_files = []
+        now_wib = datetime.datetime.utcnow() + datetime.timedelta(hours=7)
         for item in raw_items:
-            created_time = datetime.datetime.fromisoformat(item['createdTime'].replace('Z', '+00:00')).astimezone()
+            # Parse createdTime as UTC, then convert to WIB
+            created_time_utc = datetime.datetime.fromisoformat(item['createdTime'].replace('Z', '+00:00'))
+            created_time_wib = created_time_utc + datetime.timedelta(hours=7)
+            
             all_files.append({
-                'Tanggal': created_time.strftime('%Y-%m-%d'),
-                'Waktu': created_time.strftime('%H:%M:%S'),
+                'Tanggal': created_time_wib.strftime('%Y-%m-%d'),
+                'Waktu': created_time_wib.strftime('%H:%M:%S'),
                 'Nama (Clean)': clean_name(item['name']),
                 'Uploader': item.get('owners', [{}])[0].get('displayName', 'Unknown'),
                 'Link': item['webViewLink']
@@ -81,11 +85,18 @@ def main():
 
     # Sidebar
     st.sidebar.header("Kontrol Dashboard")
-    if st.sidebar.button("🔄 Refresh Data Sekarang"):
-        st.cache_data.clear()
-        st.toast("Menghubungkan ke Google Drive API...", icon="☁️")
+    if st.sidebar.button("🔄 Jalankan Sinkronisasi & Refresh"):
+        with st.spinner("Sedang menyinkronkan Drive ke Spreadsheet..."):
+            try:
+                from monitor_drive import main as run_sync
+                run_sync() # Menjalankan fungsi utama monitor_drive
+                st.cache_data.clear()
+                st.sidebar.success("Sinkronisasi Berhasil!")
+                st.toast("Spreadsheet telah diperbarui!", icon="✅")
+            except Exception as e:
+                st.sidebar.error(f"Gagal Sinkronisasi: {e}")
         
-    st.sidebar.info("Aplikasi ini terhubung otomatis ke Google Drive dan Google Sheets Anda.")
+    st.sidebar.info("Tombol di atas akan memperbarui Google Sheets & Dashboard sekaligus.")
 
     # Load Data
     with st.spinner("Mengambil data dari Cloud..."):
@@ -97,7 +108,8 @@ def main():
         with col1:
             st.metric("Total File Terkumpul", len(df_all))
         with col2:
-            today_str = datetime.datetime.now().strftime('%Y-%m-%d')
+            now_wib = datetime.datetime.utcnow() + datetime.timedelta(hours=7)
+            today_str = now_wib.strftime('%Y-%m-%d')
             today_count = len(df_all[df_all['Tanggal'] == today_str])
             st.metric("Upload Hari Ini", today_count)
         with col3:
@@ -133,12 +145,12 @@ def main():
 
         st.dataframe(filtered_df, use_container_width=True, hide_index=True)
 
-        # Download Button
+        now_wib = datetime.datetime.utcnow() + datetime.timedelta(hours=7)
         csv = df_all.to_csv(index=False).encode('utf-8')
         st.download_button(
             label="📥 Download Data CSV",
             data=csv,
-            file_name=f'Monitoring_CAPI_{datetime.datetime.now().strftime("%Y%m%d")}.csv',
+            file_name=f'Monitoring_CAPI_{now_wib.strftime("%Y%m%d")}.csv',
             mime='text/csv',
         )
     else:
