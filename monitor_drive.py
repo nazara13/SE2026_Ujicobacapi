@@ -20,24 +20,42 @@ SCOPES = [
 ]
 
 def get_services():
-    """Mengelola autentikasi Google Drive & Sheets API."""
+    """Mengelola autentikasi Google Drive & Sheets API (Mendukung Local & Streamlit Cloud)."""
     creds = None
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            if not os.path.exists('credentials.json'):
-                print("\n[ERROR] File 'credentials.json' tidak ditemukan!")
-                return None, None
+    # Coba baca dari Streamlit Secrets (Untuk Hosting Cloud)
+    try:
+        import streamlit as st
+        if "google" in st.secrets:
+            from google.oauth2.credentials import Credentials as GCoords
+            import json
+            creds_info = json.loads(st.secrets["google"]["token"])
+            creds = GCoords.from_authorized_user_info(creds_info, SCOPES)
             
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
+            # Jika token expired tapi ada refresh token di secrets
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+    except:
+        pass
+
+    # Jika bukan di cloud, cek file lokal
+    if not creds:
+        if os.path.exists('token.json'):
+            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
         
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                if not os.path.exists('credentials.json'):
+                    print("\n[ERROR] File 'credentials.json' tidak ditemukan!")
+                    return None, None
+                
+                flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+                creds = flow.run_local_server(port=0)
+            
+            with open('token.json', 'w') as token:
+                token.write(creds.to_json())
             
     drive_service = build('drive', 'v3', credentials=creds)
     sheets_service = build('sheets', 'v4', credentials=creds)
