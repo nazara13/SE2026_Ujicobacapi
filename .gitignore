@@ -1,0 +1,16 @@
+# Google API Secrets (RAHASIA - JANGAN DIHAPUS)
+credentials.json
+token.json
+
+# Python Environment
+.venv/
+__pycache__/
+*.py[cod]
+
+# Excel & Output Files
+*.xlsx
+*.xls
+
+# OS Files
+.DS_Store
+Thumbs.db
