@@ -206,9 +206,12 @@ def main():
     all_files_snapshot = []
     
     for item in items:
-        created_time = datetime.datetime.fromisoformat(item['createdTime'].replace('Z', '+00:00')).astimezone()
+        # Parse createdTime sebagai UTC, lalu tambah 7 jam (WIB)
+        created_time_utc = datetime.datetime.fromisoformat(item['createdTime'].replace('Z', '+00:00'))
+        created_time_wib = created_time_utc + datetime.timedelta(hours=7)
+        
         all_files_snapshot.append({
-            'Waktu Upload': created_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'Waktu Upload': created_time_wib.strftime('%Y-%m-%d %H:%M:%S'),
             'Nama (Clean)': clean_name(item['name']),
             'Nama Asli File': item['name'],
             'Uploader': item.get('owners', [{}])[0].get('displayName', 'Unknown'),
