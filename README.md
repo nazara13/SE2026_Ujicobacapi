@@ -1,62 +1,56 @@
-# 🚀 Google Drive Automated Monitoring Tool (SE2026 Ujicoba CAPI)
+# 📊 SE2026 Ujicoba CAPI - Automated Monitoring System
 
-Alat monitoring otomatis berbasis Python untuk melacak aktivitas upload pada folder Google Drive tertentu. Tools ini dirancang untuk melakukan snapshot kumulatif setiap hari dan menyimpannya dalam format **Excel Lokal** serta **Google Sheets (Cloud)**.
+Sistem monitoring otomatis untuk memantau progres upload file laporan di Google Drive secara real-time. Sistem ini mengintegrasikan Google Drive API, Google Sheets API, dan Streamlit Dashboard dengan otomasi penuh berbasis Cloud.
 
-## ✨ Fitur Utama
-- **Daily Snapshot Logic**: Setiap kali dijalankan, script akan membuat tab baru berdasarkan tanggal hari ini (WIB) berisi seluruh daftar file yang ada di folder (Snapshot Kumulatif).
-- **Auto Name Cleaning**: 
-  - Menghapus kode awal (seperti `1200_`, `1200-`).
-  - Menghapus ekstensi file.
-  - Mengubah format nama menjadi *Title Case* (Contoh: `laporan_bandi_ucok` -> `Laporan Bandi Ucok`).
-- **Internal Hyperlinking**: Tab **REKAP TOTAL** memiliki link otomatis yang bisa diklik untuk langsung pindah ke rincian tanggal tertentu (Berlaku di Excel & Google Sheets).
-- **Dual Output**: Sinkronisasi otomatis ke file `.xlsx` lokal dan Google Spreadsheet di cloud.
-- **Support Locale Indonesia**: Rumus menggunakan pemisah titik koma (`;`) sesuai standar regional Indonesia.
+## 🚀 Fitur Utama
+- **Monitoring Kumulatif Harian:** Melakukan snapshot otomatis setiap jam untuk melihat seluruh isi folder.
+- **Data Cleaning Otomatis:** Membersihkan nama file (menghapus ekstensi, nomor kode, dan merapikan format teks).
+- **Dashboard Interaktif (Streamlit):** Visualisasi progres, metrik harian, dan tabel pencarian uploader yang user-friendly.
+- **Otomasi GitHub Actions:** Script berjalan otomatis setiap 1 jam di Cloud tanpa perlu menyalakan komputer lokal.
+- **Sinkronisasi Multi-Platform:** Laporan diupdate sekaligus ke Excel Lokal dan Google Sheets.
 
-## 🛠️ Prasyarat
-- Python 3.8 atau lebih baru.
-- Akun Google Cloud dengan Google Drive API & Google Sheets API aktif.
+## 🛠️ Stack Teknologi
+- **Bahasa:** Python 3.10+
+- **API:** Google Drive API v3 & Google Sheets API v4
+- **Dashboard:** Streamlit & Plotly
+- **Automation:** GitHub Actions (Cron Job)
+- **Data Processing:** Pandas & Openpyxl
 
-## 📦 Instalasi
+## 📂 Struktur Project
+- `monitor_drive.py`: Core logic untuk mengambil data dari Drive dan update Sheets/Excel.
+- `app.py`: Source code untuk Dashboard Streamlit.
+- `.github/workflows/auto_monitor.yml`: Konfigurasi otomasi tiap 1 jam di GitHub.
+- `requirements.txt`: Daftar library yang dibutuhkan.
 
-1. **Clone Repository**
-   ```bash
-   git clone https://github.com/nazara13/SE2026_Ujicobacapi.git
-   cd SE2026_Ujicobacapi
-   ```
+## ⚙️ Cara Setup (Otomasi Cloud)
+Sistem ini dirancang untuk berjalan otomatis di GitHub Actions. Berikut langkah konfigurasinya:
+1.  **GitHub Secrets:** Masukkan isi file `credentials.json` dan `token.json` Anda ke menu **Settings > Secrets and variables > Actions** di repository ini dengan nama:
+    - `CREDENTIALS_JSON`
+    - `TOKEN_JSON`
+2.  **Streamlit Cloud:** Hubungkan repository ini ke [Streamlit Cloud](https://share.streamlit.io/) dan masukkan isi `token.json` ke bagian **Secrets** aplikasi dengan format TOML:
+    ```toml
+    [google]
+    token = '''{ ... isi token.json ... }'''
+    ```
 
-2. **Buat Virtual Environment (Opsional tapi Disarankan)**
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # Untuk Linux/Mac
-   .venv\Scripts\activate     # Untuk Windows
-   ```
-
-3. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## 🔑 Konfigurasi Google API
-
-Aplikasi ini membutuhkan file `credentials.json` untuk berfungsi:
-1. Buka [Google Cloud Console](https://console.cloud.google.com/).
-2. Buat Project baru dan aktifkan **Google Drive API** & **Google Sheets API**.
-3. Di bagian **OAuth Consent Screen**, pilih *External* dan tambahkan email Anda di **Test Users**.
-4. Di bagian **Credentials**, buat *OAuth Client ID* (Desktop App).
-5. Download filenya, ganti namanya menjadi `credentials.json`, dan letakkan di folder utama project ini.
-
-## 🚀 Cara Menjalankan
-Cukup jalankan perintah berikut di terminal:
+## 💻 Penggunaan Lokal
+Jika ingin menjalankan secara manual di komputer Anda:
 ```bash
-python monitor_drive.py
-```
-*Catatan: Pada login pertama, jendela browser akan terbuka untuk meminta izin akses Google.*
+# Install Library
+pip install -r requirements.txt
 
-## 🔒 Keamanan
-File rahasia berikut sudah terdaftar di `.gitignore` dan **TIDAK AKAN** terupload ke GitHub:
-- `credentials.json`
-- `token.json`
-- `*.xlsx` (Hasil laporan)
+# Jalankan Monitoring
+python monitor_drive.py
+
+# Jalankan Dashboard
+python -m streamlit run app.py
+```
+
+## 🛑 Cara Menghentikan Otomasi
+Jika proyek `SE2026` sudah selesai, Anda bisa menghentikan otomasi dengan cara:
+1. Buka tab **Actions** di GitHub.
+2. Pilih **Hourly Drive Monitor**.
+3. Klik tombol **"..."** dan pilih **Disable Workflow**.
 
 ---
-Developed by **nazara13** using Antigravity AI.
+Developed by **nazara13**.
