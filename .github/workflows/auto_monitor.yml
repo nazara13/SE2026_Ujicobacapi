@@ -1,0 +1,30 @@
+name: Hourly Drive Monitor
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Menjalankan setiap jam tepat (00:00, 01:00, dst)
+  workflow_dispatch: # Memungkinkan Anda menjalankan manual lewat tombol di GitHub
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Create Credentials Files
+        run: |
+          echo '${{ secrets.CREDENTIALS_JSON }}' > credentials.json
+          echo '${{ secrets.TOKEN_JSON }}' > token.json
+
+      - name: Run Monitoring Script
+        run: python monitor_drive.py
