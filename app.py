@@ -109,9 +109,12 @@ def main():
         # Grafik Progres
         st.subheader("📈 Tren Progres Upload (Kumulatif)")
         if df_rekap is not None and not df_rekap.empty:
-            df_rekap['Laporan'] = pd.to_numeric(df_rekap['Laporan'])
-            fig = px.line(df_rekap, x='Tanggal', y='Laporan', markers=True, 
-                          title='Jumlah File per Sesi Cek', template="plotly_white")
+            # Mengambil nama kolom uploader (kolom kedua) secara otomatis
+            uploader_col = df_rekap.columns[1]
+            df_rekap[uploader_col] = pd.to_numeric(df_rekap[uploader_col], errors='coerce')
+            
+            fig = px.line(df_rekap, x='Tanggal', y=uploader_col, markers=True, 
+                          title=f'Jumlah File per Sesi Cek', template="plotly_white")
             fig.update_traces(line_color='#1f77b4', line_width=3)
             st.plotly_chart(fig, use_container_width=True)
 
